@@ -28,9 +28,15 @@ st.markdown("""
         color: #e0e0e0;
     }
     
-    /* 2. Заголовки */
+    /* 2. Заголовки (h1 - Title, h3 - Subheader) */
     h1, h2, h3, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
         color: #ffffff !important;
+    }
+    
+    /* Исправление наложения заголовков: даем немного воздуха сверху и снизу */
+    h3 {
+        padding-top: 10px !important;
+        padding-bottom: 5px !important;
     }
     
     /* 3. Поля ввода (TextArea) */
@@ -72,14 +78,16 @@ st.markdown("""
         background-color: #2d2d2d;
     }
     
-    /* 7. ИСПРАВЛЕНИЕ РАДИО-КНОПОК (Убираем красный) */
+    /* 7. ИСПРАВЛЕНИЕ РАДИО-КНОПОК (Убираем красный цвет) */
     .stRadio label {
         color: #e0e0e0 !important;
     }
+    /* Кружочек: выбранный */
     div[role="radiogroup"] div[aria-checked="true"] div:first-child {
         background-color: #21aeb3 !important;
         border-color: #21aeb3 !important;
     }
+    /* Текст радио-кнопок */
     div[role="radiogroup"] > div {
         color: #e0e0e0 !important;
     }
@@ -89,18 +97,12 @@ st.markdown("""
         background-color: #21aeb3 !important;
     }
 
-    /* === COMPACT SPACING (Уменьшенные отступы) === */
+    /* === COMPACT SPACING (Исправлено) === */
     
-    /* Уменьшаем отступ снизу у заголовков */
-    h3 {
-        padding-bottom: 0.2rem !important;
-        padding-top: 0.5rem !important;
-    }
-    
-    /* Уменьшаем отступы вокруг радио-кнопок */
+    /* Убираем лишние отступы, но БЕЗ наложения друг на друга */
     .stRadio {
-        margin-top: -15px !important; /* Подтягиваем вверх */
-        margin-bottom: -10px !important; /* Подтягиваем снизу */
+        margin-top: 0px !important;  /* Было -15px, это вызывало ошибку. Ставим 0. */
+        margin-bottom: 0px !important;
     }
     
     /* Уменьшаем расстояние между элементами внутри колонок */
@@ -110,7 +112,7 @@ st.markdown("""
     
     /* Компактный разделитель */
     .compact-hr {
-        margin: 5px 0 !important;
+        margin: 10px 0 !important; /* Чуть больше места, чтобы не слипалось */
         border: 0;
         border-top: 1px solid #444;
     }
@@ -255,7 +257,7 @@ with col_settings:
         ("ads.txt", "app-ads.txt")
     )
     
-    # Компактный разделитель (вместо ---)
+    # Компактный разделитель
     st.markdown('<div class="compact-hr"></div>', unsafe_allow_html=True)
     
     # 2. Настройка вывода
