@@ -6,10 +6,6 @@ import time
 import random
 import os
 
-# ==========================================
-# 1. НАСТРОЙКИ СТРАНИЦЫ И СТИЛИ (CSS)
-# ==========================================
-
 icon_path = "icons/icon.png"
 page_icon = icon_path if os.path.exists(icon_path) else None
 
@@ -19,27 +15,19 @@ st.set_page_config(
     page_icon=page_icon
 )
 
-# ПРИНУДИТЕЛЬНЫЙ ДИЗАЙН:
 st.markdown("""
     <style>
-    /* 1. Глобальный фон */
     .stApp {
         background-color: #1e1e1e;
         color: #e0e0e0;
     }
-    
-    /* 2. Заголовки (h1 - Title, h3 - Subheader) */
     h1, h2, h3, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
         color: #ffffff !important;
     }
-    
-    /* Исправление наложения заголовков: даем немного воздуха сверху и снизу */
     h3 {
         padding-top: 10px !important;
         padding-bottom: 5px !important;
     }
-    
-    /* 3. Поля ввода (TextArea) */
     .stTextArea textarea {
         background-color: #2d2d2d !important;
         color: #ffffff !important;
@@ -49,8 +37,6 @@ st.markdown("""
         border-color: #21aeb3 !important;
         box-shadow: 0 0 0 1px #21aeb3 !important;
     }
-    
-    /* 4. Кнопки (Primary) */
     div.stButton > button {
         background-color: #21aeb3 !important;
         color: white !important;
@@ -62,8 +48,6 @@ st.markdown("""
         background-color: #1a8a8e !important;
         border: 1px solid #ffffff !important;
     }
-    
-    /* 5. Убираем красный из алертов */
     div[data-baseweb="notification"] {
         background-color: #2d2d2d !important;
         border: 1px solid #21aeb3 !important;
@@ -72,47 +56,31 @@ st.markdown("""
     div[data-baseweb="notification"] svg {
         fill: #21aeb3 !important;
     }
-    
-    /* 6. Таблицы */
     div[data-testid="stDataFrame"] {
         background-color: #2d2d2d;
     }
-    
-    /* 7. ИСПРАВЛЕНИЕ РАДИО-КНОПОК (Убираем красный цвет) */
     .stRadio label {
         color: #e0e0e0 !important;
     }
-    /* Кружочек: выбранный */
     div[role="radiogroup"] div[aria-checked="true"] div:first-child {
         background-color: #21aeb3 !important;
         border-color: #21aeb3 !important;
     }
-    /* Текст радио-кнопок */
     div[role="radiogroup"] > div {
         color: #e0e0e0 !important;
     }
-
-    /* 8. Прогресс-бар */
     .stProgress > div > div > div > div {
         background-color: #21aeb3 !important;
     }
-
-    /* === COMPACT SPACING (Исправлено) === */
-    
-    /* Убираем лишние отступы, но БЕЗ наложения друг на друга */
     .stRadio {
-        margin-top: 0px !important;  /* Было -15px, это вызывало ошибку. Ставим 0. */
+        margin-top: 0px !important;
         margin-bottom: 0px !important;
     }
-    
-    /* Уменьшаем расстояние между элементами внутри колонок */
     div[data-testid="column"] > div > div {
         gap: 0.5rem !important;
     }
-    
-    /* Компактный разделитель */
     .compact-hr {
-        margin: 10px 0 !important; /* Чуть больше места, чтобы не слипалось */
+        margin: 10px 0 !important;
         border: 0;
         border-top: 1px solid #444;
     }
@@ -120,10 +88,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("Ads.txt / App-ads.txt Validator")
-
-# ==========================================
-# 2. ФУНКЦИИ ЛОГИКИ (BACKEND)
-# ==========================================
 
 LIVE_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
@@ -244,23 +208,16 @@ def validate_domain(target_domain, filename, references):
         
     return results
 
-# ==========================================
-# 3. ИНТЕРФЕЙС (UI)
-# ==========================================
-
 st.subheader("Settings")
 col_settings, col_dummy = st.columns([1, 4])
 with col_settings:
-    # 1. Выбор файла
     file_type = st.radio(
         "File Type",
         ("ads.txt", "app-ads.txt")
     )
     
-    # Компактный разделитель
     st.markdown('<div class="compact-hr"></div>', unsafe_allow_html=True)
     
-    # 2. Настройка вывода
     view_mode = st.radio(
         "Output View",
         ("Show All Results", "Errors / Warnings Only"),
@@ -291,10 +248,6 @@ with col2:
     )
 
 start_btn = st.button("Start Validation")
-
-# ==========================================
-# 4. ОБРАБОТКА И ВЫВОД (EXECUTION)
-# ==========================================
 
 if start_btn:
     if not target_input or not ref_input:
@@ -349,7 +302,6 @@ if start_btn:
         cols_order = ["URL", "File", "Result", "Details", "Reference"]
         df = df[cols_order]
 
-        # === ЛОГИКА ФИЛЬТРАЦИИ ===
         if view_mode == "Errors / Warnings Only":
             df = df[df['Result'] != 'Valid']
 
