@@ -6,8 +6,6 @@ import time
 import random
 import os
 
-# ---------------- CONFIG ---------------- #
-
 LIVE_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -16,8 +14,6 @@ LIVE_UA = (
 
 MAX_WORKERS = 5
 REQUEST_TIMEOUT = 15
-
-# ---------------- STREAMLIT ---------------- #
 
 icon_path = "icons/icon.png"
 page_icon = icon_path if os.path.exists(icon_path) else None
@@ -28,12 +24,8 @@ st.set_page_config(
     page_icon=page_icon
 )
 
-# ---------------- SESSION ---------------- #
-
 if "results_df" not in st.session_state:
     st.session_state.results_df = None
-
-# ---------------- HTTP ---------------- #
 
 def create_session():
     s = requests.Session()
@@ -43,8 +35,6 @@ def create_session():
         "Cache-Control": "no-cache",
     })
     return s
-
-# ---------------- FETCH ---------------- #
 
 def fetch_ads_file(session, domain, filename):
     domain = domain.strip().replace("https://", "").replace("http://", "").split("/")[0]
@@ -81,8 +71,6 @@ def fetch_ads_file(session, domain, filename):
 
     return None, "File not accessible", True
 
-# ---------------- PARSING ---------------- #
-
 def parse_ads_txt(content):
     records = []
 
@@ -108,7 +96,6 @@ def parse_ads_txt(content):
 
     return records
 
-
 def parse_reference(line):
     parts = [p.strip() for p in line.split(",")]
 
@@ -122,8 +109,6 @@ def parse_reference(line):
         "cert": parts[3].lower() if len(parts) >= 4 else None,
         "original": line,
     }
-
-# ---------------- VALIDATION ---------------- #
 
 def validate_domain(domain, filename, references):
     session = create_session()
@@ -153,7 +138,6 @@ def validate_domain(domain, filename, references):
             if rec["domain"] == ref["domain"] and rec["id"] == ref["id"]:
                 found = True
 
-                # IAB logic
                 if not ref["type"]:
                     final_status = "Valid"
                     details = "Matched (type not required)"
@@ -177,8 +161,6 @@ def validate_domain(domain, filename, references):
         })
 
     return results
-
-# ---------------- UI ---------------- #
 
 st.title("Ads.txt / App-ads.txt Validator")
 
@@ -214,8 +196,6 @@ if st.button("Start Validation"):
         df = df[df["Result"] != "Valid"]
 
     st.session_state.results_df = df
-
-# ---------------- OUTPUT ---------------- #
 
 if st.session_state.results_df is not None:
     st.dataframe(st.session_state.results_df, use_container_width=True)
