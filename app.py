@@ -5,10 +5,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import random
 import os
-from urllib.parse import urlparse
-from requests.adapters import HTTPAdapter
-from urllib3.util import Retry
-import urllib3
+
+# ---------------- CONFIG ---------------- #
 
 LIVE_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -19,6 +17,8 @@ LIVE_UA = (
 MAX_WORKERS = 5
 REQUEST_TIMEOUT = 15
 
+# ---------------- STREAMLIT ---------------- #
+
 icon_path = "icons/icon.png"
 page_icon = icon_path if os.path.exists(icon_path) else None
 
@@ -28,15 +28,15 @@ st.set_page_config(
     page_icon=page_icon
 )
 
+# ---------------- SESSION ---------------- #
+
 if "results_df" not in st.session_state:
     st.session_state.results_df = None
 
+# ---------------- HTTP ---------------- #
+
 def create_session():
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     s = requests.Session()
-    retries = Retry(total=2, backoff_factor=0.5, status_forcelist=[429, 500, 502, 503, 504], allowed_methods=["GET"])
-    s.mount("https://", HTTPAdapter(max_retries=retries))
-    s.mount("http://", HTTPAdapter(max_retries=retries))
     s.headers.update({
         "User-Agent": LIVE_UA,
         "Accept": "text/plain,text/html;q=0.9,*/*;q=0.8",
@@ -44,31 +44,31 @@ def create_session():
     })
     return s
 
-def normalize_host(value):
-    v = value.strip()
-    if not v:
-        return ""
-    if not v.startswith(("http://", "https://")):
-        v = "http://" + v
-    parsed = urlparse(v)
-    return parsed.netloc
+# ---------------- FETCH ---------------- #
 
 def fetch_ads_file(session, domain, filename):
-    host = normalize_host(domain)
-    if not host:
-        return None, "Invalid domain", True
-    urls = [f"https://{host}/{filename}", f"http://{host}/{filename}"]
+    domain = domain.strip().replace("https://", "").replace("http://", "").split("/")[0]
+
+    urls = [
+        f"https://{domain}/{filename}",
+        f"http://{domain}/{filename}",
+    ]
+
     for url in urls:
         try:
-            time.sleep(random.uniform(0.2, 0.6))
+            time.sleep(random.uniform(0.4, 1.2))
             r = session.get(url, timeout=REQUEST_TIMEOUT, allow_redirects=True)
+
             content_type = r.headers.get("Content-Type", "").lower()
+
             if r.status_code == 200:
                 if "text/html" in content_type:
                     return None, "HTML instead of TXT", True
                 return r.text, "OK", False
+
             if r.status_code in (403, 404):
                 return None, f"HTTP {r.status_code}", True
+
         except requests.exceptions.SSLError:
             try:
                 r = session.get(url, timeout=REQUEST_TIMEOUT, verify=False)
@@ -78,79 +78,82 @@ def fetch_ads_file(session, domain, filename):
                 pass
         except Exception as e:
             return None, str(e), True
+
     return None, "File not accessible", True
+
+# ---------------- PARSING ---------------- #
 
 def parse_ads_txt(content):
     records = []
+
     if not content:
         return records
+
     for raw in content.splitlines():
         line = raw.lstrip("\ufeff").split("#")[0].strip()
         if not line:
             continue
+
         parts = [p.strip() for p in line.split(",")]
+
         if len(parts) < 2:
             continue
+
         records.append({
             "domain": parts[0].lower(),
             "id": parts[1].lower(),
-            "type": parts[2].upper() if len(parts) >= 3 and parts[2] else None,
-            "cert": parts[3].lower() if len(parts) >= 4 and parts[3] else None,
+            "type": parts[2].upper() if len(parts) >= 3 else None,
+            "cert": parts[3].lower() if len(parts) >= 4 else None,
         })
+
     return records
+
 
 def parse_reference(line):
     parts = [p.strip() for p in line.split(",")]
+
     if len(parts) < 2:
         return None
+
     return {
         "domain": parts[0].lower(),
         "id": parts[1].lower(),
-        "type": parts[2].upper() if len(parts) >= 3 and parts[2] else None,
-        "cert": parts[3].lower() if len(parts) >= 4 and parts[3] else None,
+        "type": parts[2].upper() if len(parts) >= 3 else None,
+        "cert": parts[3].lower() if len(parts) >= 4 else None,
         "original": line,
     }
+
+# ---------------- VALIDATION ---------------- #
 
 def validate_domain(domain, filename, references):
     session = create_session()
     content, status, error = fetch_ads_file(session, domain, filename)
+
     results = []
+
     if error:
-        if references:
-            for ref in references:
-                results.append({
-                    "URL": domain,
-                    "File": filename,
-                    "Result": "Error",
-                    "Details": status,
-                    "Reference": ref["original"],
-                })
-        else:
+        for ref in references:
             results.append({
                 "URL": domain,
                 "File": filename,
                 "Result": "Error",
                 "Details": status,
-                "Reference": "",
+                "Reference": ref["original"],
             })
         return results
+
     records = parse_ads_txt(content)
-    if not references:
-        results.append({
-            "URL": domain,
-            "File": filename,
-            "Result": "Found file",
-            "Details": "File fetched and parsed",
-            "Reference": "",
-        })
-        return results
+
     for ref in references:
         found = False
         final_status = "Not found"
         details = "No matching Domain + ID"
+
         for rec in records:
             if rec["domain"] == ref["domain"] and rec["id"] == ref["id"]:
                 found = True
+
+                # IAB logic
                 if not ref["type"]:
                     final_status = "Valid"
                     details = "Matched (type not required)"
@@ -164,6 +167,7 @@ def validate_domain(domain, filename, references):
                     final_status = "Valid"
                     details = f"Type differs (found {rec['type']})"
                 break
+
         results.append({
             "URL": domain,
             "File": filename,
@@ -171,7 +175,10 @@ def validate_domain(domain, filename, references):
             "Details": details,
             "Reference": ref["original"],
         })
+
     return results
+
+# ---------------- UI ---------------- #
 
 st.title("Ads.txt / App-ads.txt Validator")
 
@@ -188,43 +195,30 @@ with col2:
 
 if st.button("Start Validation"):
     targets = [t.strip() for t in targets_raw.splitlines() if t.strip()]
-    references = []
-    for r in refs_raw.splitlines():
-        pr = parse_reference(r)
-        if pr:
-            references.append(pr)
-    if not targets:
-        st.warning("No target domains provided")
-    else:
-        all_results = []
-        future_to_target = {}
-        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            for t in targets:
-                future = executor.submit(validate_domain, t, file_type, references)
-                future_to_target[future] = t
-            for future in as_completed(future_to_target):
-                t = future_to_target.get(future, "")
-                try:
-                    res = future.result()
-                    if res:
-                        all_results.extend(res)
-                except Exception as e:
-                    all_results.append({
-                        "URL": t,
-                        "File": file_type,
-                        "Result": "Error",
-                        "Details": f"Worker exception: {e}",
-                        "Reference": "",
-                    })
-        if all_results:
-            df = pd.DataFrame(all_results)
-        else:
-            df = pd.DataFrame(columns=["URL", "File", "Result", "Details", "Reference"])
-        if view_mode == "Errors / Warnings Only" and "Result" in df.columns:
-            df = df[df["Result"] != "Valid"]
-        st.session_state.results_df = df
+    references = [parse_reference(r) for r in refs_raw.splitlines() if parse_reference(r)]
+
+    all_results = []
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [
+            executor.submit(validate_domain, t, file_type, references)
+            for t in targets
+        ]
+
+        for future in as_completed(futures):
+            all_results.extend(future.result())
+
+    df = pd.DataFrame(all_results)
+
+    if view_mode == "Errors / Warnings Only":
+        df = df[df["Result"] != "Valid"]
+
+    st.session_state.results_df = df
+
+# ---------------- OUTPUT ---------------- #
 
 if st.session_state.results_df is not None:
     st.dataframe(st.session_state.results_df, use_container_width=True)
+
     csv = st.session_state.results_df.to_csv(index=False).encode("utf-8")
     st.download_button("Download CSV", csv, "report.csv", "text/csv")
