@@ -20,7 +20,7 @@ This tool allows you to check if specific partner lines (Reference Lines) are co
 * **CSV Export:** Download detailed reports for offline analysis.
 * **Dark Mode:** Custom UI styled for comfortable usage in low-light environments.
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 * Python 3.8+
