@@ -11,7 +11,7 @@ icon_path = "icons/icon.png"
 page_icon = icon_path if os.path.exists(icon_path) else None
 
 st.set_page_config(
-    page_title="Ads.txt / App-ads.txt Validator", 
+    page_title="Ads.txt / App-ads.txt line Checker", 
     layout="wide", 
     page_icon=page_icon
 )
@@ -112,7 +112,7 @@ with col_head1:
     if os.path.exists(icon_path):
         st.image(icon_path, width=65)
 with col_head2:
-    st.title("Ads.txt / App-ads.txt Validator")
+    st.title("Ads.txt / App-ads.txt line Checker")
 
 LIVE_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
