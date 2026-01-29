@@ -30,7 +30,7 @@ This tool allows you to check if specific partner lines (Reference Lines) are co
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/ads-txt-validator.git](https://github.com/your-username/ads-txt-validator.git)
+    git clone [https://github.com/your-username/ads.txt-app-ads.txt-line-checker.git](https://github.com/your-username/ads.txt-app-ads.txt-line-checker.git)
     cd ads-txt-validator
     ```
 
